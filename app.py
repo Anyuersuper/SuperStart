@@ -1,20 +1,18 @@
 import subprocess
 import tkinter as tk
-from tkinter import filedialog, simpledialog, messagebox
+from tkinter import filedialog, simpledialog, messagebox, ttk
 import os
 
 def handle_filepath(filepath):
     """处理文件路径中的斜杠，统一转换为反斜杠"""
     if "/" in filepath:
         filepath = filepath.replace("/", "\\")
-        print(filepath)
     return filepath
 
 def cmd_filepath(filepath):
     """生成以管理员权限运行文件的PowerShell命令"""
     filepath = handle_filepath(filepath)
     command = f'powershell -Command "Start-Process \'{filepath}\' -Verb runAs"'
-    print(command)
     return command
 
 def run_command(command):
@@ -34,15 +32,23 @@ def load_config():
             path = config_info.split('=')[1].strip().replace('"', '')
             return path
 
+def get_app_list():
+    """获取apps文件夹下的所有批处理文件"""
+    apps_dir = load_config()
+    if not os.path.exists(apps_dir):
+        return []
+    
+    app_files = [f for f in os.listdir(apps_dir) if f.endswith('.bat')]
+    return app_files
+
 def create_main_window():
     """创建主窗口"""
     root = tk.Tk()
-    root.title("SuperStart")
-    root.geometry("300x150")
+    root.title("快捷方式生成器")
+    root.geometry("500x400")
     
-    # 设置窗口图标（如果有的话）
     try:
-        root.iconbitmap('icon.ico')  # 请确保有icon.ico文件
+        root.iconbitmap('icon.ico')
     except:
         pass
     
@@ -70,56 +76,146 @@ def generate_app():
         return
     
     command = cmd_filepath(file_path)
-    filename = savepath + "/" + filename + ".bat"
+    filename = os.path.join(savepath, filename + ".bat")
     filename = handle_filepath(filename)
-    filepath = os.path.join(os.getcwd(), filename)
     
     try:
-        with open(filepath, "w") as f:
+        with open(filename, "w") as f:
             f.write(command)
-        messagebox.showinfo("成功", f"命令已保存到:\n{filepath}")
+        messagebox.showinfo("成功", f"命令已保存到:\n{filename}")
+        refresh_app_list()  # 刷新列表
     except Exception as e:
         messagebox.showerror("错误", f"保存文件失败:\n{str(e)}")
 
+def run_selected_app():
+    """运行选中的APP"""
+    selected_item = app_listbox.focus()
+    if not selected_item:
+        messagebox.showwarning("警告", "请先选择一个APP")
+        return
+    
+    item_text = app_listbox.item(selected_item)['values'][0]
+    apps_dir = load_config()
+    app_path = os.path.join(apps_dir, item_text)
+    
+    try:
+        subprocess.run(app_path, shell=True)
+    except Exception as e:
+        messagebox.showerror("错误", f"运行APP失败:\n{str(e)}")
+
+def delete_selected_app():
+    """删除选中的APP"""
+    selected_item = app_listbox.focus()
+    if not selected_item:
+        messagebox.showwarning("警告", "请先选择一个APP")
+        return
+    
+    item_text = app_listbox.item(selected_item)['values'][0]
+    apps_dir = load_config()
+    app_path = os.path.join(apps_dir, item_text)
+    
+    try:
+        os.remove(app_path)
+        refresh_app_list()  # 刷新列表
+        messagebox.showinfo("成功", f"已删除: {item_text}")
+    except Exception as e:
+        messagebox.showerror("错误", f"删除APP失败:\n{str(e)}")
+
+def refresh_app_list():
+    """刷新APP列表"""
+    # 清空现有列表
+    for item in app_listbox.get_children():
+        app_listbox.delete(item)
+    
+    # 重新加载APP列表
+    app_files = get_app_list()
+    for i, app in enumerate(app_files, 1):
+        app_listbox.insert("", "end", values=(app,), tags=(f'row{i}',))
+
 def main():
     """主函数，创建GUI界面"""
+    global app_listbox
+    
     root = create_main_window()
     
-    # 创建按钮框架
-    button_frame = tk.Frame(root)
-    button_frame.pack(pady=20)
+    # 主框架
+    main_frame = tk.Frame(root)
+    main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
     
-    # 创建打开APP按钮
+    # 按钮框架
+    button_frame = tk.Frame(main_frame)
+    button_frame.pack(fill=tk.X, pady=5)
+    
+    # 创建按钮
     open_button = tk.Button(
         button_frame, 
         text="打开APP", 
         command=open_app,
         width=15,
-        height=2,
+        height=1,
         bg="#4CAF50",
         fg="white"
     )
-    open_button.pack(side=tk.LEFT, padx=10)
+    open_button.pack(side=tk.LEFT, padx=5)
     
-    # 创建生成APP按钮
     generate_button = tk.Button(
         button_frame, 
         text="生成APP", 
         command=generate_app,
         width=15,
-        height=2,
+        height=1,
         bg="#2196F3",
         fg="white"
     )
-    generate_button.pack(side=tk.LEFT, padx=10)
+    generate_button.pack(side=tk.LEFT, padx=5)
     
-    # 添加说明标签
-    info_label = tk.Label(
-        root, 
-        text="选择功能: 直接打开应用或生成快捷方式",
-        font=("Arial", 10)
+    # 操作按钮框架
+    action_frame = tk.Frame(main_frame)
+    action_frame.pack(fill=tk.X, pady=5)
+    
+    run_button = tk.Button(
+        action_frame,
+        text="运行选中APP",
+        command=run_selected_app,
+        width=15,
+        height=1,
+        bg="#FF9800",
+        fg="white"
     )
-    info_label.pack(pady=10)
+    run_button.pack(side=tk.LEFT, padx=5)
+    
+    delete_button = tk.Button(
+        action_frame,
+        text="删除选中APP",
+        command=delete_selected_app,
+        width=15,
+        height=1,
+        bg="#F44336",
+        fg="white"
+    )
+    delete_button.pack(side=tk.LEFT, padx=5)
+    
+    # APP列表框架
+    list_frame = tk.Frame(main_frame)
+    list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+    
+    # 列表标题
+    list_label = tk.Label(list_frame, text="已有快捷方式:", font=("Arial", 10, "bold"))
+    list_label.pack(anchor=tk.W)
+    
+    # 创建Treeview列表
+    app_listbox = ttk.Treeview(list_frame, columns=("app",), show="headings", height=10)
+    app_listbox.heading("app", text="快捷方式名称")
+    app_listbox.column("app", width=450, anchor=tk.W)
+    
+    # 添加滚动条
+    scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=app_listbox.yview)
+    app_listbox.configure(yscrollcommand=scrollbar.set)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    app_listbox.pack(fill=tk.BOTH, expand=True)
+    
+    # 初始化列表
+    refresh_app_list()
     
     root.mainloop()
 
