@@ -1,21 +1,28 @@
-# 超级启动器 (SuperStart)
+# 🚀 超级启动器 (SuperStart)
+
+![Python Version](https://img.shields.io/badge/Python-3.7%2B-blue)
+![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-brightgreen)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
 一个简单实用的Windows应用程序管理工具，专门用于以管理员权限启动应用程序。
 
-## 系统要求
+## 🖥️ 界面预览
+![界面预览](screenshots/main.png)
+
+## ⚙️ 系统要求
 
 - Windows 10/11
 - Python 3.7+
 - 管理员权限
 
-## 安装要求
+## 📦 安装要求
 
 需要安装以下Python包：
 ```bash
 pip install winshell
 ```
 
-## 安装和运行
+## 📥 安装和运行
 
 ### 1. 下载并安装Python
 - 访问 [Python官网](https://www.python.org/downloads/) 下载Python 3.7+
@@ -45,7 +52,7 @@ winshell>=0.6
 pywin32>=223
 ```
 
-## 主要功能
+## ✨ 主要功能
 
 - 将常用需要管理员权限的程序添加为APP
 - 支持拖放文件直接以管理员权限运行
@@ -53,7 +60,7 @@ pywin32>=223
 - 双击即可运行已添加的APP
 - 支持右键菜单快捷操作
 
-### 高级功能
+### 🎯 高级功能
 
 1. **智能路径处理**：
    - 自动转换正斜杠(/)为反斜杠(\)
@@ -69,9 +76,9 @@ pywin32>=223
    - 双击快速启动
    - 美观的GUI界面
 
-## 使用方法
+## 📖 使用方法
 
-### 基本操作
+### 🔰 基本操作
 
 1. **生成APP**：
    - 点击"生成APP"按钮
@@ -87,24 +94,40 @@ pywin32>=223
    - 双击列表中的APP即可运行
    - 或右键选择"运行"
 
-### 快捷方式管理
+### 🔗 快捷方式管理
 
 右键点击APP可以：
 - 创建桌面快捷方式
 - 创建开始菜单快捷方式
 - 删除APP
 
-### 拖放功能
+### 🖱️ 拖放功能
 
 直接将文件拖放到程序图标上，即可以管理员权限运行该文件。
 
-## 配置说明
+## ⚡ 配置说明
 
 程序会自动创建以下文件：
 - `config.info`: 存储APP保存位置
 - `apps`文件夹: 默认的APP存储目录
 
-## 注意事项
+## 🎨 美化说明
+
+### 🖼️ 程序图标
+可以替换 `icon.ico` 文件来自定义程序图标。推荐图标尺寸：
+- 32x32 像素
+- 48x48 像素
+- 256x256 像素
+
+### 🌈 按钮图标
+在生成的快捷方式中，程序会自动使用目标程序的图标。
+
+### 🎯 推荐图标资源
+- [Icons8](https://icons8.com/) - 免费图标库
+- [Flaticon](https://www.flaticon.com/) - 高质量图标
+- [Material Design Icons](https://materialdesignicons.com/) - Google风格图标
+
+## ⚠️ 注意事项
 
 1. **安全提示**：
    - 请确保只为受信任的程序创建管理员权限快捷方式
@@ -118,7 +141,7 @@ pywin32>=223
    - 删除APP时不会自动删除已创建的快捷方式
    - 建议手动管理不再使用的快捷方式
 
-## 故障排除
+## 🔧 故障排除
 
 1. **程序无法启动**：
    - 检查Python环境是否正确安装
@@ -134,9 +157,9 @@ pywin32>=223
    - 如遇配置文件损坏，可删除`config.info`文件
    - 程序将自动创建新的配置文件
 
-## 开发说明
+## 💻 开发说明
 
-### 项目结构
+### 📁 项目结构
 ```
 SuperStart/
 │  SuperStart.py    # 主程序
@@ -146,18 +169,18 @@ SuperStart/
 └─apps/            # APP存储目录
 ```
 
-### 主要模块依赖
+### 📚 主要模块依赖
 - tkinter: GUI界面
 - winshell: 快捷方式管理
 - subprocess: 进程控制
 - argparse: 命令行参数处理
 
-### 贡献指南
+### 🤝 贡献指南
 1. Fork 项目
 2. 创建新的分支
 3. 提交更改
 4. 发起 Pull Request
 
-## License
+## 📄 License
 
 MIT License
