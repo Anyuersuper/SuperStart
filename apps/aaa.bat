@@ -1,0 +1,1 @@
+powershell -Command "Start-Process 'D:\Program Files (x86)\geek.exe' -Verb runAs"
