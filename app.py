@@ -2,25 +2,22 @@ import subprocess
 import tkinter as tk
 from tkinter import filedialog, simpledialog, messagebox, ttk
 import os
+import winshell
 
 def handle_filepath(filepath):
-    """处理文件路径中的斜杠，统一转换为反斜杠"""
     if "/" in filepath:
         filepath = filepath.replace("/", "\\")
     return filepath
 
 def cmd_filepath(filepath):
-    """生成以管理员权限运行文件的PowerShell命令"""
     filepath = handle_filepath(filepath)
     command = f'powershell -Command "Start-Process \'{filepath}\' -Verb runAs"'
     return command
 
 def run_command(command):
-    """执行系统命令"""
     subprocess.run(command, shell=True, capture_output=True, text=True)
 
 def load_config():
-    """加载配置文件，如果不存在则创建默认配置"""
     if not os.path.exists('config.info'):
         with open('config.info', 'w') as f:
             f.write('path="apps"')
@@ -33,7 +30,6 @@ def load_config():
             return path
 
 def get_app_list():
-    """获取apps文件夹下的所有批处理文件"""
     apps_dir = load_config()
     if not os.path.exists(apps_dir):
         return []
@@ -42,9 +38,8 @@ def get_app_list():
     return app_files
 
 def create_main_window():
-    """创建主窗口"""
     root = tk.Tk()
-    root.title("快捷方式生成器")
+    root.title("超级启动器")
     root.geometry("500x400")
     
     try:
@@ -55,7 +50,6 @@ def create_main_window():
     return root
 
 def open_app():
-    """打开APP按钮的功能"""
     file_path = filedialog.askopenfilename(title="选择要打开的应用程序")
     if not file_path:
         return
@@ -64,32 +58,30 @@ def open_app():
     run_command(command)
 
 def generate_app():
-    """生成APP按钮的功能"""
     savepath = load_config()
     
-    file_path = filedialog.askopenfilename(title="选择要创建快捷方式的文件")
+    file_path = filedialog.askopenfilename(title="选择要需要管理员权限打开的文件")
     if not file_path:
         return
     
-    filename = simpledialog.askstring("文件名", "输入快捷方式名称(不要扩展名):")
+    filename = simpledialog.askstring("AppName", "输入App名字(不要扩展名):")
     if not filename:
         return
     
     command = cmd_filepath(file_path)
-    filename = os.path.join(savepath, filename + ".bat")
-    filename = handle_filepath(filename)
+    bat_filename = os.path.join(savepath, filename + ".bat")
+    bat_filename = handle_filepath(bat_filename)
     
     try:
-        with open(filename, "w") as f:
+        with open(bat_filename, "w") as f:
             f.write(command)
-        messagebox.showinfo("成功", f"命令已保存到:\n{filename}")
-        refresh_app_list()  # 刷新列表
+        messagebox.showinfo("成功", f"App已保存到:\n{bat_filename}")
+        refresh_app_list()
     except Exception as e:
         messagebox.showerror("错误", f"保存文件失败:\n{str(e)}")
 
 def run_selected_app(event=None):
-    """运行选中的APP"""
-    selected_item = app_listbox.selection()  # 使用selection()而不是focus()
+    selected_item = app_listbox.selection()
     if not selected_item:
         messagebox.showwarning("警告", "请先选择一个APP")
         return
@@ -104,8 +96,7 @@ def run_selected_app(event=None):
         messagebox.showerror("错误", f"运行APP失败:\n{str(e)}")
 
 def delete_selected_app(event=None):
-    """删除选中的APP"""
-    selected_item = app_listbox.selection()  # 使用selection()而不是focus()
+    selected_item = app_listbox.selection()
     if not selected_item:
         messagebox.showwarning("警告", "请先选择一个APP")
         return
@@ -116,56 +107,102 @@ def delete_selected_app(event=None):
     
     try:
         os.remove(app_path)
-        refresh_app_list()  # 刷新列表
+        refresh_app_list()
         messagebox.showinfo("成功", f"已删除: {item_text}")
     except Exception as e:
         messagebox.showerror("错误", f"删除APP失败:\n{str(e)}")
 
+def create_lnk_shortcut(event=None, target_folder="desktop"):
+    selected_item = app_listbox.selection()
+    if not selected_item:
+        messagebox.showwarning("警告", "请先选择一个APP")
+        return
+    
+    item_text = app_listbox.item(selected_item)['values'][0]
+    apps_dir = os.path.abspath(load_config())
+    bat_path = os.path.join(apps_dir, item_text)
+    
+    try:
+        with open(bat_path, 'r') as f:
+            bat_content = f.read()
+        
+        import re
+        match = re.search(r"Start-Process \'(.*?)\'", bat_content)
+        if not match:
+            messagebox.showerror("错误", "无法解析.bat文件中的目标程序路径")
+            return
+        
+        exe_path = match.group(1)
+        exe_path = handle_filepath(exe_path)
+        
+        if not os.path.exists(exe_path):
+            messagebox.showerror("错误", f"目标程序不存在:\n{exe_path}")
+            return
+    except Exception as e:
+        messagebox.showerror("错误", f"解析.bat文件失败:\n{str(e)}")
+        return
+    
+    if target_folder == "desktop":
+        lnk_folder = winshell.desktop()
+    elif target_folder == "start_menu":
+        lnk_folder = os.path.join(os.getenv('APPDATA'), 'Microsoft', 'Windows', 'Start Menu', 'Programs')
+    
+    lnk_name = item_text[:-4] + ".lnk"
+    lnk_path = os.path.join(lnk_folder, lnk_name)
+    
+    try:
+        with winshell.shortcut(lnk_path) as shortcut:
+            shortcut.path = os.path.abspath(bat_path)
+            shortcut.description = "快捷方式到 " + item_text
+            shortcut.working_directory = os.path.abspath(apps_dir)
+            shortcut.runas = 1
+            shortcut.icon_location = (exe_path, 0)
+        
+        location = "桌面" if target_folder == "desktop" else "开始菜单"
+        messagebox.showinfo("成功", f"已创建快捷方式到{location}:\n{lnk_name}")
+    except Exception as e:
+        messagebox.showerror("错误", f"创建快捷方式失败:\n{str(e)}")
+
+def create_start_menu_shortcut():
+    create_lnk_shortcut(target_folder="start_menu")
+
 def show_context_menu(event):
-    """显示右键菜单"""
-    # 获取鼠标位置下的项目
     item = app_listbox.identify_row(event.y)
     if item:
-        # 选中该项目
         app_listbox.selection_set(item)
         
-        # 创建菜单
         menu = tk.Menu(root, tearoff=0)
         menu.add_command(label="运行", command=run_selected_app)
+        menu.add_separator()
+        menu.add_command(label="生成桌面快捷方式", command=lambda: create_lnk_shortcut(target_folder="desktop"))
+        menu.add_command(label="生成开始菜单快捷方式", command=create_start_menu_shortcut)
+        menu.add_separator()
         menu.add_command(label="删除", command=delete_selected_app)
         
-        # 显示菜单
         try:
             menu.tk_popup(event.x_root, event.y_root)
         finally:
             menu.grab_release()
 
 def refresh_app_list():
-    """刷新APP列表"""
-    # 清空现有列表
     for item in app_listbox.get_children():
         app_listbox.delete(item)
     
-    # 重新加载APP列表
     app_files = get_app_list()
     for i, app in enumerate(app_files, 1):
         app_listbox.insert("", "end", values=(app,), tags=(f'row{i}',))
 
 def main():
-    """主函数，创建GUI界面"""
     global app_listbox, root
     
     root = create_main_window()
     
-    # 主框架
     main_frame = tk.Frame(root)
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
     
-    # 按钮框架
     button_frame = tk.Frame(main_frame)
     button_frame.pack(fill=tk.X, pady=5)
     
-    # 创建按钮
     generate_button = tk.Button(
         button_frame, 
         text="生成APP", 
@@ -176,7 +213,6 @@ def main():
         fg="white"
     )
     generate_button.pack(side=tk.LEFT, padx=5)
-
 
     open_button = tk.Button(
         button_frame, 
@@ -189,32 +225,25 @@ def main():
     )
     open_button.pack(side=tk.LEFT, padx=5)
     
-    # APP列表框架
     list_frame = tk.Frame(main_frame)
     list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
     
-    # 列表标题
     list_label = tk.Label(list_frame, text="Apps:", font=("Arial", 10, "bold"))
     list_label.pack(anchor=tk.W)
     
-    # 创建Treeview列表
     app_listbox = ttk.Treeview(list_frame, columns=("app",), show="headings", height=10)
-    # app_listbox.heading("app", text="AppName")
-    # app_listbox.column("app", width=450, anchor=tk.W)
+    app_listbox.heading("app", text="AppName")
+    app_listbox.column("app", width=450, anchor=tk.W)
     
-    # 添加滚动条
     scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=app_listbox.yview)
     app_listbox.configure(yscrollcommand=scrollbar.set)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     app_listbox.pack(fill=tk.BOTH, expand=True)
     
-    # 绑定右键菜单事件
     app_listbox.bind("<Button-3>", show_context_menu)
     
-    # 绑定双击事件运行APP
     app_listbox.bind("<Double-1>", run_selected_app)
     
-    # 初始化列表
     refresh_app_list()
     
     root.mainloop()
