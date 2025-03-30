@@ -87,9 +87,9 @@ def generate_app():
     except Exception as e:
         messagebox.showerror("错误", f"保存文件失败:\n{str(e)}")
 
-def run_selected_app():
+def run_selected_app(event=None):
     """运行选中的APP"""
-    selected_item = app_listbox.focus()
+    selected_item = app_listbox.selection()  # 使用selection()而不是focus()
     if not selected_item:
         messagebox.showwarning("警告", "请先选择一个APP")
         return
@@ -103,9 +103,9 @@ def run_selected_app():
     except Exception as e:
         messagebox.showerror("错误", f"运行APP失败:\n{str(e)}")
 
-def delete_selected_app():
+def delete_selected_app(event=None):
     """删除选中的APP"""
-    selected_item = app_listbox.focus()
+    selected_item = app_listbox.selection()  # 使用selection()而不是focus()
     if not selected_item:
         messagebox.showwarning("警告", "请先选择一个APP")
         return
@@ -121,6 +121,25 @@ def delete_selected_app():
     except Exception as e:
         messagebox.showerror("错误", f"删除APP失败:\n{str(e)}")
 
+def show_context_menu(event):
+    """显示右键菜单"""
+    # 获取鼠标位置下的项目
+    item = app_listbox.identify_row(event.y)
+    if item:
+        # 选中该项目
+        app_listbox.selection_set(item)
+        
+        # 创建菜单
+        menu = tk.Menu(root, tearoff=0)
+        menu.add_command(label="运行", command=run_selected_app)
+        menu.add_command(label="删除", command=delete_selected_app)
+        
+        # 显示菜单
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
 def refresh_app_list():
     """刷新APP列表"""
     # 清空现有列表
@@ -134,7 +153,7 @@ def refresh_app_list():
 
 def main():
     """主函数，创建GUI界面"""
-    global app_listbox
+    global app_listbox, root
     
     root = create_main_window()
     
@@ -147,17 +166,6 @@ def main():
     button_frame.pack(fill=tk.X, pady=5)
     
     # 创建按钮
-    open_button = tk.Button(
-        button_frame, 
-        text="打开APP", 
-        command=open_app,
-        width=15,
-        height=1,
-        bg="#4CAF50",
-        fg="white"
-    )
-    open_button.pack(side=tk.LEFT, padx=5)
-    
     generate_button = tk.Button(
         button_frame, 
         text="生成APP", 
@@ -168,51 +176,43 @@ def main():
         fg="white"
     )
     generate_button.pack(side=tk.LEFT, padx=5)
-    
-    # 操作按钮框架
-    action_frame = tk.Frame(main_frame)
-    action_frame.pack(fill=tk.X, pady=5)
-    
-    run_button = tk.Button(
-        action_frame,
-        text="运行选中APP",
-        command=run_selected_app,
+
+
+    open_button = tk.Button(
+        button_frame, 
+        text="免生成打开APP", 
+        command=open_app,
         width=15,
         height=1,
-        bg="#FF9800",
+        bg="#4CAF50",
         fg="white"
     )
-    run_button.pack(side=tk.LEFT, padx=5)
-    
-    delete_button = tk.Button(
-        action_frame,
-        text="删除选中APP",
-        command=delete_selected_app,
-        width=15,
-        height=1,
-        bg="#F44336",
-        fg="white"
-    )
-    delete_button.pack(side=tk.LEFT, padx=5)
+    open_button.pack(side=tk.LEFT, padx=5)
     
     # APP列表框架
     list_frame = tk.Frame(main_frame)
     list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
     
     # 列表标题
-    list_label = tk.Label(list_frame, text="已有快捷方式:", font=("Arial", 10, "bold"))
+    list_label = tk.Label(list_frame, text="Apps:", font=("Arial", 10, "bold"))
     list_label.pack(anchor=tk.W)
     
     # 创建Treeview列表
     app_listbox = ttk.Treeview(list_frame, columns=("app",), show="headings", height=10)
-    app_listbox.heading("app", text="快捷方式名称")
-    app_listbox.column("app", width=450, anchor=tk.W)
+    # app_listbox.heading("app", text="AppName")
+    # app_listbox.column("app", width=450, anchor=tk.W)
     
     # 添加滚动条
     scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=app_listbox.yview)
     app_listbox.configure(yscrollcommand=scrollbar.set)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     app_listbox.pack(fill=tk.BOTH, expand=True)
+    
+    # 绑定右键菜单事件
+    app_listbox.bind("<Button-3>", show_context_menu)
+    
+    # 绑定双击事件运行APP
+    app_listbox.bind("<Double-1>", run_selected_app)
     
     # 初始化列表
     refresh_app_list()
