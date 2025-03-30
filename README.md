@@ -1,6 +1,13 @@
 # 超级启动器 (SuperStart)
 
+![Python Version](https://img.shields.io/badge/Python-3.7%2B-blue)
+![Platform](https://img.shields.io/badge/Platform-Windows%2010%2F11-brightgreen)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
 一个简单实用的Windows应用程序管理工具，专门用于以管理员权限启动应用程序。
+
+## 界面预览
+![界面预览](screenshots/main.png)
 
 ## 系统要求
 
@@ -103,6 +110,22 @@ pywin32>=223
 程序会自动创建以下文件：
 - `config.info`: 存储APP保存位置
 - `apps`文件夹: 默认的APP存储目录
+
+## 美化说明
+
+### 程序图标
+可以替换 `icon.ico` 文件来自定义程序图标。推荐图标尺寸：
+- 32x32 像素
+- 48x48 像素
+- 256x256 像素
+
+### 按钮图标
+在生成的快捷方式中，程序会自动使用目标程序的图标。
+
+### 推荐图标资源
+- [Icons8](https://icons8.com/) - 免费图标库
+- [Flaticon](https://www.flaticon.com/) - 高质量图标
+- [Material Design Icons](https://materialdesignicons.com/) - Google风格图标
 
 ## 注意事项
 
