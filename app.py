@@ -3,6 +3,12 @@ import tkinter as tk
 from tkinter import filedialog, simpledialog, messagebox, ttk
 import os
 import winshell
+import argparse
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='超级启动器')
+    parser.add_argument('file', nargs='?', help='要拖放的文件路径')
+    return parser.parse_args()
 
 def handle_filepath(filepath):
     if "/" in filepath:
@@ -249,4 +255,9 @@ def main():
     root.mainloop()
 
 if __name__ == "__main__":
-    main()
+    args = parse_arguments()
+    if args.file:  # 如果有拖放的文件
+        command = cmd_filepath(args.file)
+        run_command(command)
+    else:  # 正常启动GUI
+        main()
