@@ -204,7 +204,9 @@ def main():
     root = create_main_window()
     
     main_frame = tk.Frame(root)
+    
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
     
     button_frame = tk.Frame(main_frame)
     button_frame.pack(fill=tk.X, pady=5)
