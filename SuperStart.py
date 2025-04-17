@@ -2,7 +2,6 @@ import subprocess
 import tkinter as tk
 from tkinter import filedialog, simpledialog, messagebox, ttk
 import os
-import winshell
 import argparse
 
 def parse_arguments():
