@@ -3,6 +3,8 @@ import tkinter as tk
 from tkinter import filedialog, simpledialog, messagebox, ttk
 import os
 import argparse
+import winshell
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='超级启动器')
